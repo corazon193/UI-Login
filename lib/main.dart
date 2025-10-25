@@ -1,0 +1,64 @@
+import 'package:tutorial/core/l10n/cubit/language_cubit.dart';
+import 'package:tutorial/core/l10n/generated/app_localizations.dart';
+import 'package:tutorial/core/route/app_route.dart';
+import 'package:tutorial/core/theme/app_color.dart';
+import 'package:tutorial/core/theme/app_theme.dart';
+import 'package:tutorial/core/theme/cubit/theme_cubit.dart';
+import 'package:tutorial/core/utils/app_utils.dart';
+import 'package:tutorial/main_module.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await MainModule.init();
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonizerConfig(
+      data: SkeletonizerConfigData(
+        effect: ShimmerEffect(
+          baseColor: AppColor.neutral[700]!,
+          highlightColor: AppColor.white,
+          duration: const Duration(milliseconds: 1500),
+        ),
+      ),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => LanguageCubit(GetIt.I.get())..init()),
+          BlocProvider(create: (_) => ThemeCubit(GetIt.I.get())..init()),
+        ],
+        child: Builder(
+          builder: (context) {
+            return MaterialApp.router(
+              locale: context.watch<LanguageCubit>().state.current,
+              debugShowCheckedModeBanner: false,
+              routerConfig: AppRoute.router,
+              title: AppUtils.appName,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: ThemeMode.light,
+              builder: (context, child) {
+                final MediaQueryData data = MediaQuery.of(context);
+                return MediaQuery(
+                  // making sure the text scale not affected by system font size
+                  data: data.copyWith(textScaler: const TextScaler.linear(1.0)),
+                  child: child ?? const SizedBox(),
+                );
+              },
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
